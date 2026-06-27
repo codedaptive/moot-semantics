@@ -76,5 +76,9 @@ Rewritten cross-venue Cargo dependencies:
 ## Notes
 
 This is a mechanical test publish. It proves source export, comment scrubbing,
-provenance generation, commit creation, push, and scaffold CI. It does not yet
-prove final SwiftPM/Cargo install surfaces for every package.
+provenance generation, cross-venue Cargo dependency rewriting, root SwiftPM
+manifest generation, root Cargo workspace generation, commit creation, push,
+and public GitHub CI for locked Rust workspace builds.
+
+It does not yet produce release tags, precompiled binary artifacts, generated
+API reference docs, or full conformance-test certification.
