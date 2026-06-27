@@ -25,4 +25,7 @@ jobs:
           test -f docs/CONFORMANCE.md
       - name: Check Cargo workspace metadata
         run: |
-          cargo metadata --manifest-path Cargo.toml --no-deps --format-version 1 >/tmp/moot-cargo-metadata.json
+          cargo metadata --locked --manifest-path Cargo.toml --no-deps --format-version 1 >/tmp/moot-cargo-metadata.json
+      - name: Check Cargo workspace build
+        run: |
+          cargo check --workspace --locked
