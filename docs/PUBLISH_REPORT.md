@@ -67,6 +67,12 @@ Removed internal/process comment lines:
 - `packages/libs/LatticeLib/rust/tests/novel_token_effectiveness_test.rs`: 5 line(s)
 - `packages/libs/LatticeLib/rust/tests/pool_reducer_conflict_tests.rs`: 1 line(s)
 
+## Dependency Rewrites
+
+Rewritten cross-venue Cargo dependencies:
+
+- None
+
 ## Notes
 
 This is a mechanical test publish. It proves source export, comment scrubbing,
