@@ -23,3 +23,6 @@ jobs:
           test -f TRADEMARKS.md
           test -f docs/PACKAGE_MAP.md
           test -f docs/CONFORMANCE.md
+      - name: Check Cargo workspace metadata
+        run: |
+          cargo metadata --manifest-path Cargo.toml --no-deps --format-version 1 >/tmp/moot-cargo-metadata.json
