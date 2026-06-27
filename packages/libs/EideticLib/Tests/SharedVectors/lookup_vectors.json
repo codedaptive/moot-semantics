@@ -1,0 +1,135 @@
+{
+  "schema_version" : "2",
+  "vectors" : [
+    {
+      "id" : "chemistry_single_token",
+      "input" : "chemistry",
+      "expected_code" : ""
+    },
+    {
+      "input" : "organic chemistry",
+      "expected_code" : "",
+      "id" : "organic_chemistry_phrase"
+    },
+    {
+      "expected_code" : "",
+      "id" : "computer_single_token",
+      "input" : "computer"
+    },
+    {
+      "expected_code" : "",
+      "input" : "computer science programming",
+      "id" : "computer_science_phrase"
+    },
+    {
+      "expected_code" : "",
+      "input" : "mathematics",
+      "id" : "mathematics_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "physics",
+      "id" : "physics_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "biology",
+      "id" : "biology_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "psychology",
+      "id" : "psychology_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "music",
+      "id" : "music_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "philosophy",
+      "id" : "philosophy_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "history",
+      "id" : "history_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "geography",
+      "id" : "geography_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "engineering",
+      "id" : "engineering_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "medicine",
+      "id" : "medicine_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "law",
+      "id" : "law_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "economics",
+      "id" : "economics_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "art",
+      "id" : "art_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "literature",
+      "id" : "literature_single_token"
+    },
+    {
+      "expected_code" : "297",
+      "input" : "religion",
+      "id" : "religion_single_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "",
+      "id" : "empty_input"
+    },
+    {
+      "expected_code" : "",
+      "input" : "qwertyzxcvb",
+      "id" : "nonsense_token"
+    },
+    {
+      "expected_code" : "",
+      "input" : "!!!???",
+      "id" : "punctuation_only_drops_to_empty"
+    },
+    {
+      "expected_code" : "",
+      "input" : "biology and chemistry research",
+      "id" : "mixed_phrase_biology_pulls_to_class_5"
+    },
+    {
+      "expected_code" : "",
+      "input" : "x",
+      "id" : "single_letter_no_match"
+    },
+    {
+      "expected_code" : "",
+      "input" : "mechanical engineering",
+      "id" : "engineering_phrase"
+    },
+    {
+      "expected_code" : "",
+      "input" : "chemical compounds",
+      "id" : "chemical_morphology_via_stemmer"
+    }
+  ]
+}
