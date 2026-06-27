@@ -1,0 +1,9 @@
+# Generated scaffold. Workspace members are loaded by the MOOTx01 publisher.
+[workspace]
+resolver = "2"
+members = []
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/codedaptive/moot-semantics"
