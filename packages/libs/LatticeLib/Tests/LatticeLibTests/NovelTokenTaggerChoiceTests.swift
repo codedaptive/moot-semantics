@@ -7,7 +7,7 @@
 //   (a) .hmm choice → HMM novel-token tagging (platform-independent)
 //   (b) .nlTagger choice on Apple → NLTagger path (or .other when gate disabled)
 //   (c) BagBuilder.bag with taggerChoice threads choice correctly
-//   (d) wordClass(_:tagger:.hmm) matches wordClass(_:tagger:.hmm) (deterministic)
+//   (d) same input through .hmm produces identical output on repeated calls (deterministic)
 //   (e) Table-resident tokens are unaffected by tagger choice
 
 import Testing
@@ -24,7 +24,7 @@ struct NovelTokenTaggerChoiceTests {
     @Test(".hmm choice classifies novel -tion token as noun via HMM")
     func hmmChoiceNounSuffix() {
         // "xylophonation" — not a real word; novel token, strong noun suffix.
-        // With trained priors noun -1480, verb -1884: totals noun -4571, verb -9350.
+        // With trained priors noun -643, verb -1562: totals noun -3746, verb -7879.
         // Expected: .noun
         let result = LatticeLib.wordClass("xylophonation", tagger: .hmm)
         #expect(result == .noun)

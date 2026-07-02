@@ -130,6 +130,30 @@ impl Fdc {
         }
     }
 
+    /// Non-recording variant of `encode_anchor` (secfix/fdc-pool).
+    ///
+    /// Identical result to `encode_anchor` — the (code, conceptQID) pair is
+    /// byte-for-byte the same. Novel tokens encountered during FDC concept-bag
+    /// construction are NOT accumulated into `SHARED_NOVEL_CACHE` when this
+    /// variant is used.
+    ///
+    /// Use this when `text` is user-supplied memory content that must not leak
+    /// plaintext tokens into the pool pipeline — specifically the capture seam
+    /// in `intake.rs` (`capture_with_mode`), where FDC classification runs
+    /// before the capture write, so even rejected or empty-room captures would
+    /// otherwise spill tokens to plaintext pool files.
+    ///
+    /// Delegates to `FdcMatcher::encode_anchor_no_record` →
+    /// `build_encoder_bag_no_record` → `WordClassTableCache::word_class_no_record`
+    /// (which skips the `SHARED_NOVEL_CACHE.record` call for novel tokens).
+    ///
+    pub fn encode_anchor_no_record(text: &str) -> (Option<String>, Option<String>) {
+        match get_bundle() {
+            Some(b) => b.matcher.encode_anchor_no_record(text),
+            None => (None, None),
+        }
+    }
+
     /// True when the bundled artifacts loaded and the engine is ready.
     pub fn is_available() -> bool {
         get_bundle().is_some()
@@ -203,9 +227,10 @@ impl Fdc {
 mod tests {
     use super::*;
 
-    // Tests require the bundled artifacts to be present (include_bytes! at compile time).
-    // All four tests are skipped gracefully when artifacts are unavailable; in practice
-    // they always load since the JSON files are bundled unconditionally.
+    // Tests that call Fdc::label() on non-empty input require the bundled
+    // artifacts (include_bytes! at compile time) and guard with Fdc::is_available().
+    // `label_empty_returns_none` runs unconditionally — it does not need artifacts.
+    // In practice the JSON files are always bundled so all tests run.
 
     #[test]
     fn label_empty_returns_none() {

@@ -14,19 +14,30 @@
 //
 // `encode` is a pure function of the input text and the pinned artifacts
 // (lexicon, signatures, frame) — the agreement property.
+//
+// PERFORMANCE — String→Int term interning (#31 Phase 2):
+// The codebook (sigTerms / index / idf) is built once at init from the pinned
+// FDCSignatures.json and never mutated. Every term in the signatures is
+// assigned a dense integer id at init (ascending String order so Int sort ==
+// String sort, preserving all deterministic sort operations). The per-call hot
+// path (encodeFromBag → score / rawOverlap) then operates on Int-keyed
+// structures, eliminating the per-lookup String.hash / Hasher.combine / dict
+// find that appeared as the dominant hot frame in the profiler on a 49k-drawer
+// palace import.
 
 import Foundation
 
 public struct FDCMatcher: Sendable {
 
-    /// How the per-code overlap is turned into a score (cookbook §5.3 is
-    /// `.raw`; the others are normalization variants under measurement in
-    /// Step-4 argmax and the Step-5 descent overlap, so the descent target is
-    /// always scored on the same footing as the argmax winner.
+    /// How the per-code overlap is turned into a score. The score function
+    /// is applied CONSISTENTLY to both the Step-4 argmax and the Step-5
+    /// descent overlap, so the descent target is always scored on the same
+    /// footing as the argmax winner. The direct-construction default is
+    /// `.raw`; `FDCRuntime` opts in to `.idf` (the shipped runtime mode).
     ///
     /// Over the membership signatures (a code's term SET) and the runtime bag
     /// (term -> count `n`), with overlap `O = bag ∩ sig`:
-    ///   - `.raw`:       Σ_{t∈O} bag[t].                       (current ship)
+    ///   - `.raw`:       Σ_{t∈O} bag[t].                 (direct-init default)
     ///   - `.idf`:       Σ_{t∈O} bag[t]·idf(t).
     ///   - `.cosine`:    (Σ_{t∈O} bag[t]) / sqrt(|sig|).
     ///   - `.idfCosine`: (Σ_{t∈O} bag[t]·idf(t)) / sqrt(Σ_{t∈sig} idf(t)²).
@@ -56,14 +67,55 @@ public struct FDCMatcher: Sendable {
 
     private let lexicon: CanonicalizationLexicon
     private let frame: FDCFrame
-    private let sigTerms: [String: Set<String>]    // code -> signature term set
-    private let index: [String: [String]]          // term -> codes (sorted)
 
-    // Precomputed at init from the signatures, so encode() does no df/idf work.
-    // Empty/zero unless a mode needs them.
-    private let idf: [String: Double]              // term -> ln(N / df(t))
-    private let sigNorm: [String: Double]          // code -> sqrt(|sig|)        (.cosine)
-    private let sigIDFNorm: [String: Double]        // code -> sqrt(Σ idf(t)²)    (.idfCosine)
+    // MARK: - Interning table (#31 Phase 2)
+    //
+    // Terms are interned to dense Int ids once at init so encodeFromBag runs
+    // Int-keyed lookups instead of String-keyed ones. The id assignment order
+    // is ascending String order (alphabetical), which means Int sort order ==
+    // String sort order — every `.sorted()` call on a Set<Int> of term ids
+    // produces the same iteration sequence as `.sorted()` on the original
+    // Set<String>. This is required to keep the floating-point summation order
+    // for IDF-weighted scores bit-identical to the pre-interning implementation.
+
+    /// term String → dense Int id. IDs are 0-based, contiguous, assigned in
+    /// ascending String order so that Int-order and String-order are the same.
+    private let termToID: [String: Int]
+
+    // MARK: - Int-keyed internal structures (hot path)
+
+    /// code → Set<TermID>. Replaces the old `sigTerms: [String: Set<String>]`.
+    /// Membership check is O(1) via Set hash (Int hash is trivial), and the
+    /// Set can be iterated in sorted TermID order (== String order) for the
+    /// deterministic overlap filter in score().
+    private let sigTermIDs: [String: Set<Int>]
+
+    /// TermID → sorted [String] codes (inverted index). Replaces the old
+    /// `index: [String: [String]]`. Key is a dense Int so dict find is a
+    /// single integer hash.
+    private let indexByID: [Int: [String]]
+
+    /// TermID → idf value. Replaces the old `idf: [String: Double]`. Keyed
+    /// by dense Int id; only the IDF and IdfCosine modes read this map.
+    private let idfByID: [Int: Double]
+
+    // MARK: - Code-keyed norm tables (unchanged from pre-interning)
+
+    /// code → sqrt(|sig|) for `.cosine` mode. Keyed by code string (not term),
+    /// so no interning benefit here — this map is read once per descent step,
+    /// not once per term.
+    private let sigNorm: [String: Double]
+
+    /// code → sqrt(Σ idf(t)²) for `.idfCosine` mode. Summed in sorted TermID
+    /// order (== sorted String order) to produce a bit-identical result to the
+    /// pre-interning init.
+    private let sigIDFNorm: [String: Double]
+
+    /// A term-interned bag: TermID → count. Used internally for all scoring
+    /// operations. Built from a ConceptBag in `encodeFromBag` by looking up
+    /// each term's dense integer id. Terms absent from the codebook have no id
+    /// and are silently dropped (they cannot match any signature).
+    private typealias InternedBag = [Int: Int]
 
     public init(
         lexicon: CanonicalizationLexicon,
@@ -74,70 +126,101 @@ public struct FDCMatcher: Sendable {
     ) {
         self.lexicon = lexicon
         self.frame = frame
-        self.sigTerms = signatures
         self.stopThreshold = stopThreshold
         self.scoreMode = scoreMode
-        var idx: [String: [String]] = [:]
-        for (code, terms) in signatures { for t in terms { idx[t, default: []].append(code) } }
-        for k in idx.keys { idx[k]!.sort() }       // deterministic order
-        self.index = idx
 
-        // IDF over the code signatures: df(t) = # signatures containing t,
-        // N = total code signatures. idf(t) = ln(N / df(t)) (a term in every
-        // signature carries idf 0; a term in one signature carries ln(N)).
-        // Computed once here so encode() never recomputes; only the modes that
-        // use it (.idf, .idfCosine) read these maps, but precomputing for all
-        // modes keeps init branch-free and the cost is one pass over df.
+        // 1. Collect every unique term across all signatures, sort alphabetically,
+        //    and assign a dense integer id. Ascending String order → Int order ==
+        //    String order, so any `.sorted()` on a Set<Int> of term ids visits terms
+        //    in the same sequence as `.sorted()` on the original Set<String>.
+        var allTerms = Set<String>()
+        for (_, terms) in signatures { allTerms.formUnion(terms) }
+        let sortedTerms = allTerms.sorted()
+        var termToID: [String: Int] = Dictionary(minimumCapacity: sortedTerms.count)
+        for (id, term) in sortedTerms.enumerated() { termToID[term] = id }
+        self.termToID = termToID
+
+        // 2. Rebuild the signature term sets as Set<Int> (sigTermIDs).
+        var sigTermIDs: [String: Set<Int>] = Dictionary(minimumCapacity: signatures.count)
+        for (code, terms) in signatures {
+            // Every term in `signatures` is in `termToID` by construction above,
+            // so compactMap drops nothing here. The compactMap is defensive.
+            sigTermIDs[code] = Set(terms.compactMap { termToID[$0] })
+        }
+        self.sigTermIDs = sigTermIDs
+
+        // 3. Rebuild the inverted index as [Int: [String]] (indexByID).
+        var idxByID: [Int: [String]] = [:]
+        for (code, termIDs) in sigTermIDs {
+            for id in termIDs { idxByID[id, default: []].append(code) }
+        }
+        // Sort each code list for deterministic scan order (same invariant as
+        // the old `for k in idx.keys { idx[k]!.sort() }`).
+        for id in idxByID.keys { idxByID[id]!.sort() }
+        self.indexByID = idxByID
+
+        // 4. Compute IDF over the code signatures.
+        //    df(t) = # signatures containing t, N = total code signatures.
+        //    idf(t) = ln(N / df(t)). A term in every signature carries idf 0.
+        //    Stored as [Int: Double] keyed by TermID.
         var df: [String: Int] = [:]
         for (_, terms) in signatures { for t in terms { df[t, default: 0] += 1 } }
         let n = Double(signatures.count)
-        var idfMap: [String: Double] = [:]
-        idfMap.reserveCapacity(df.count)
-        for (t, d) in df { idfMap[t] = d > 0 ? Foundation.log(n / Double(d)) : 0 }
-        self.idf = idfMap
+        var idfByID: [Int: Double] = Dictionary(minimumCapacity: df.count)
+        for (t, d) in df {
+            if let id = termToID[t] {
+                idfByID[id] = d > 0 ? Foundation.log(n / Double(d)) : 0
+            }
+        }
+        self.idfByID = idfByID
 
-        // Per-signature norms (the big-signature penalty). `.cosine` divides by
-        // sqrt(|sig|); `.idfCosine` divides by the IDF-weighted L2 norm of the
-        // signature. A zero norm (empty signature, or all-idf-0 terms) is left
-        // at 0 and treated as "no division" at score time.
-        var normMap: [String: Double] = [:]
-        var idfNormMap: [String: Double] = [:]
+        // 5. Per-signature norms (the big-signature penalty).
+        //    `.cosine`    divides by sqrt(|sig|).
+        //    `.idfCosine` divides by the IDF-weighted L2 norm of the signature.
+        //    A zero norm (empty sig or all-idf-0 terms) is stored as 0 and
+        //    treated as "no division" at score time.
+        //
+        //    The IDF norm sum uses SORTED TermID order, which is identical to the
+        //    pre-interning `terms.sorted()` String order (IDs assigned in ascending
+        //    String order). This preserves bit-identical floating-point results:
+        //    addition is non-associative, and Set iteration order is randomized.
+        var normMap: [String: Double] = Dictionary(minimumCapacity: signatures.count)
+        var idfNormMap: [String: Double] = Dictionary(minimumCapacity: signatures.count)
         for (code, terms) in signatures {
-            normMap[code] = (terms.count > 0) ? Foundation.sqrt(Double(terms.count)) : 0
-            // Sum the squared IDF weights in SORTED term order: floating-point
-            // addition is non-associative and `terms` is a Set (random iteration
-            // order per process), so an unsorted sum yields a per-process-varying
-            // norm that flips near-ties in `.idfCosine`. Sorting pins the result.
+            normMap[code] = terms.count > 0 ? Foundation.sqrt(Double(terms.count)) : 0
             var ss = 0.0
-            for t in terms.sorted() { let w = idfMap[t] ?? 0; ss += w * w }
-            idfNormMap[code] = (ss > 0) ? Foundation.sqrt(ss) : 0
+            // Sort by TermID (== ascending String order) to match the pre-interning
+            // `terms.sorted()` summation order for bit-identical IDF norms.
+            let sortedIDs = (sigTermIDs[code] ?? []).sorted()
+            for id in sortedIDs { let w = idfByID[id] ?? 0; ss += w * w }
+            idfNormMap[code] = ss > 0 ? Foundation.sqrt(ss) : 0
         }
         self.sigNorm = normMap
         self.sigIDFNorm = idfNormMap
     }
 
-    /// Score `code`'s overlap with `bag` under the active `scoreMode`. The
-    /// numerator is summed over the overlap (terms shared between the bag and
-    /// the code's membership signature); the denominator is the mode's
-    /// signature-side normalization (1 for `.raw`/`.idf`). Used for BOTH the
-    /// Step-4 argmax and the Step-5 descent ranking so they stay on one footing.
-    /// Returns 0.0 when there is no overlap.
-    private func score(code: String, bag: ConceptBag) -> Double {
-        guard let terms = sigTerms[code] else { return 0 }
-        // Sum over the overlap in SORTED term order: floating-point addition is
-        // not associative, so a fixed summation order is required for the
-        // normalized modes to be bit-reproducible (the `bag` dict's iteration
-        // order is randomized per process). For `.raw` the sum is integral and
-        // order-independent, but we use the same path for uniformity.
-        let overlap = terms.filter { bag[$0] != nil }.sorted()
+    /// Score `code`'s overlap with the interned `bag` under the active
+    /// `scoreMode`. The numerator is summed over the overlap in SORTED TermID
+    /// order, which (by the ascending-String-order ID assignment) is identical
+    /// to the pre-interning sorted-String-term order — required for
+    /// bit-reproducible IDF-weighted sums. Returns 0.0 when there is no overlap.
+    ///
+    /// Used for BOTH the Step-4 argmax and the Step-5 descent ranking so they
+    /// stay on one footing. Mirrors the pre-interning `score(code:bag:)`.
+    private func score(code: String, bag: InternedBag) -> Double {
+        guard let termIDs = sigTermIDs[code] else { return 0 }
+        // Collect the overlap in SORTED TermID order.
+        // Int-order == String-order (IDs assigned in ascending String order),
+        // so this is equivalent to the pre-interning `terms.filter{}.sorted()`.
+        let overlap = termIDs.filter { bag[$0] != nil }.sorted()
         var num = 0.0
         switch scoreMode {
         case .raw, .cosine:
             // Raw numerator: Σ bag[t] over the overlap.
-            for t in overlap { num += Double(bag[t]!) }
+            for id in overlap { num += Double(bag[id]!) }
         case .idf, .idfCosine:
             // IDF-weighted numerator: Σ bag[t]·idf(t) over the overlap.
-            for t in overlap { num += Double(bag[t]!) * (idf[t] ?? 0) }
+            for id in overlap { num += Double(bag[id]!) * (idfByID[id] ?? 0) }
         }
         switch scoreMode {
         case .raw, .idf:
@@ -153,10 +236,12 @@ public struct FDCMatcher: Sendable {
 
     /// The RAW integer overlap Σ bag[t] over (bag ∩ sig), used for the
     /// mode-independent descent cutoff comparison (see `stopThreshold`).
-    private func rawOverlap(code: String, bag: ConceptBag) -> Int {
-        guard let terms = sigTerms[code] else { return 0 }
+    /// Iterates the signature's TermID set and looks each up in the
+    /// interned bag — O(K) where K is signature size (typically 5–20 terms).
+    private func rawOverlap(code: String, bag: InternedBag) -> Int {
+        guard let termIDs = sigTermIDs[code] else { return 0 }
         var o = 0
-        for (t, n) in bag where terms.contains(t) { o += n }
+        for id in termIDs { if let n = bag[id] { o += n } }
         return o
     }
 
@@ -194,20 +279,74 @@ public struct FDCMatcher: Sendable {
     /// so EideticLib fills an Anchor's code + wikidataQID without re-bagging.
     public func encodeAnchor(_ text: String) -> (code: String?, conceptQID: String?) {
         let bag = BagBuilder.bag(text, lexicon: lexicon)
-        let qid = dominantQID(bag)              // independent of whether a code matches
+        return encodeFromBag(bag)
+    }
+
+    /// Non-recording variant of `encodeAnchor` (secfix/fdc-pool).
+    ///
+    /// Identical classification result to `encodeAnchor(_:)` — the FDC code
+    /// and concept Q-ID are byte-for-byte the same. The only difference is that
+    /// novel tokens encountered while building the concept bag are NOT accumulated
+    /// into `sharedNovelCache`. Use this overload when `text` is user-supplied
+    /// memory content that must not leak into the plaintext pool pipeline.
+    ///
+    /// Pass `recordNovel: false` to suppress accumulation. Pass `recordNovel: true`
+    /// (or call the single-arg overload) to use the standard recording path.
+    ///
+    public func encodeAnchor(_ text: String, recordNovel: Bool) -> (code: String?, conceptQID: String?) {
+        if recordNovel {
+            // Delegate to the recording path — identical behaviour, no duplication.
+            return encodeAnchor(text)
+        }
+        // Non-recording: build bag via the non-recording BagBuilder overload so
+        // novel user-memory tokens never accumulate in sharedNovelCache.
+        let bag = BagBuilder.bag(text, lexicon: lexicon, recordNovel: false)
+        return encodeFromBag(bag)
+    }
+
+    /// Score a pre-built concept bag against the FDC signatures (Steps 4–5) and
+    /// return the best matching code + dominant Q-ID.
+    ///
+    /// The bag must be fully constructed before calling this method; whether
+    /// novel-token classification was recorded into the pool cache is the
+    /// caller's responsibility. Both `encodeAnchor(_:)` and
+    /// `encodeAnchor(_:recordNovel:)` delegate here so the scoring logic lives
+    /// in exactly one place.
+    ///
+    /// Converts the String-keyed ConceptBag to an Int-keyed InternedBag once,
+    /// then all scoring and overlap operations use Int-keyed lookups. Terms
+    /// absent from the codebook (no TermID) are silently dropped from the
+    /// interned bag — they cannot match any signature, identical to the
+    /// pre-interning `index[term] == nil` skip.
+    private func encodeFromBag(_ bag: ConceptBag) -> (code: String?, conceptQID: String?) {
+        // dominantQID scans for "Q"-prefixed keys in the String bag and is
+        // independent of the interning structures — compute it first from the
+        // original bag before building the interned projection.
+        let qid = dominantQID(bag)
         guard !bag.isEmpty else { return (nil, qid) }
 
-        // Step 4 — match + score (§5.2/§5.3). The inverted index gives the
-        // set of candidate codes (any code sharing ≥1 bag term); each
+        // Convert the String-keyed concept bag to an Int-keyed interned bag.
+        // Terms absent from the codebook have no TermID and are silently
+        // dropped — they match no signature entry, identical behaviour to the
+        // pre-interning path (which skipped them via `index[term] == nil`).
+        var internedBag: InternedBag = Dictionary(minimumCapacity: bag.count)
+        for (term, count) in bag {
+            if let id = termToID[term] { internedBag[id, default: 0] += count }
+        }
+        guard !internedBag.isEmpty else { return (nil, qid) }
+
+        // Step 4 — match + score (§5.2/§5.3). The Int-keyed inverted index
+        // gives the set of candidate codes (any code sharing ≥1 bag term); each
         // candidate is then scored under the active mode. For `.raw` the score
         // is exactly Σ bag[t] (integers held in Double — comparisons exact),
         // reproducing the shipped behavior bit-for-bit.
         var candidateSet: Set<String> = []
-        for (term, _) in bag {
-            guard let codes = index[term] else { continue }
+        for (termID, _) in internedBag {
+            guard let codes = indexByID[termID] else { continue }
             for code in codes { candidateSet.insert(code) }
         }
         guard !candidateSet.isEmpty else { return (nil, qid) }   // §5.2.3 — UNRESOLVED, no guess
+
         // Sorted so the scan order is deterministic regardless of Set hashing.
         // This matters for the normalized modes: two codes can carry equal (or
         // float-rounding-equal) scores, and the lowest-code tie-break only
@@ -219,7 +358,7 @@ public struct FDCMatcher: Sendable {
         var node = ""
         var nodeScore = -Double.greatestFiniteMagnitude
         for code in candidates {
-            let s = score(code: code, bag: bag)
+            let s = score(code: code, bag: internedBag)
             if s > nodeScore || (s == nodeScore && code < node) {
                 node = code; nodeScore = s
             }
@@ -232,7 +371,7 @@ public struct FDCMatcher: Sendable {
         // grounded one — a confidently-wrong specific code is worse than the
         // honest "000" unclassified sentinel. UNRESOLVED when tied codes
         // exceed the allowed maximum.
-        let tiedCount = candidates.filter { score(code: $0, bag: bag) == nodeScore }.count
+        let tiedCount = candidates.filter { score(code: $0, bag: internedBag) == nodeScore }.count
         guard tiedCount <= Self.maximumTiedWinnersForClassification else {
             return (nil, qid)   // too many tied winners — no discriminating signal
         }
@@ -245,9 +384,9 @@ public struct FDCMatcher: Sendable {
             var best: String?
             var bestScore = 0.0
             for child in frame.children(of: node) {
-                guard sigTerms[child.code] != nil else { continue }
-                guard rawOverlap(code: child.code, bag: bag) >= stopThreshold else { continue }
-                let s = score(code: child.code, bag: bag)
+                guard sigTermIDs[child.code] != nil else { continue }
+                guard rawOverlap(code: child.code, bag: internedBag) >= stopThreshold else { continue }
+                let s = score(code: child.code, bag: internedBag)
                 if best == nil || s > bestScore || (s == bestScore && child.code < best!) {
                     best = child.code; bestScore = s
                 }
@@ -261,6 +400,9 @@ public struct FDCMatcher: Sendable {
     /// The highest-count Wikidata Q-ID in `bag` (ties broken by lowest Q-ID
     /// lexicographically, so the result is deterministic regardless of the
     /// bag's dictionary iteration order). `nil` if the bag holds no Q-ID key.
+    ///
+    /// Uses the original String-keyed ConceptBag — Q-ID extraction is
+    /// independent of the term interning structures.
     private func dominantQID(_ bag: ConceptBag) -> String? {
         var best: String?
         var bestN = 0

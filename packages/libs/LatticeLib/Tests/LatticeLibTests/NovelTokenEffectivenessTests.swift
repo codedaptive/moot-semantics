@@ -4,24 +4,21 @@
 //
 // The loop has two edges:
 //
-//   WRITE EDGE: tag/submit content with a novel token → accumulate to threshold
-//               → drain → pool JSON file on disk → PoolReducer.reduce seeds
-//               writable artifact + merges token → artifact updated.
+//               (bypassing NovelTokenCache threshold) → PoolReducer.reduce
+//               seeds writable artifact + merges token → artifact updated.
 //
-//   READ EDGE:  on the NEXT process load, WordClassTableCache is populated via
-//               WordClassTable.loadWithPrecedence() → writable artifact loaded
-//               → previously-novel token is now table-resident → wordClass fast
-//               path returns its class directly.
+//   READ EDGE:  load the writable artifact into a fresh WordClassTable
+//               (simulating a new-process load via loadWithPrecedence) →
+//               previously-novel token is now table-resident → wordClass
+//               fast path returns its class directly.
 //
-// These tests cover the CROSS-RELOAD read edge: the READ EDGE is exercised by
-// loading the writable artifact directly into a fresh WordClassTable (simulating
-// a new-process load) and asserting membership there. Live in-session swap is a
-// separate, shipped path (WordClassTable.swap), covered by LiveTableSwapTests;
-// the cross-reload read tested here is its own still-valid path, not a
-// substitute for it.
+// These tests cover the CROSS-RELOAD read edge by loading the writable
+// artifact into a fresh WordClassTable and asserting membership. Live
+// in-session swap is a separate, shipped path (WordClassTable.swap),
+// covered by LiveTableSwapTests; the cross-reload read tested here is its
+// own still-valid path, not a substitute for it.
 //
 //   - begin from bundled table → novel token absent.
-//   - accumulate to threshold → pool file on disk.
 //   - run reduce → seeds-if-absent + merges + writes writable artifact.
 //   - reload tagger (fresh WordClassTable from writable path) → token NOW classified.
 //   - writable artifact seeded when absent (no tableReadFailed).
@@ -99,7 +96,8 @@ struct NovelTokenEffectivenessTests {
         let result = try PoolReducer.reduce(
             poolDirectory: poolDir,
             tableArtifactURL: artifactURL,
-            now: now
+            now: now,
+            maxFiles: .max
         )
 
         // REDUCE RESULT: writable artifact was seeded, file consumed, tokens merged.
@@ -167,7 +165,8 @@ struct NovelTokenEffectivenessTests {
         let result = try PoolReducer.reduce(
             poolDirectory: poolDir,
             tableArtifactURL: artifactURL,
-            now: Date()
+            now: Date(),
+            maxFiles: .max
         )
 
         // reduce must not have thrown tableReadFailed.
@@ -289,7 +288,8 @@ struct NovelTokenEffectivenessTests {
         let r1 = try PoolReducer.reduce(
             poolDirectory: poolDir,
             tableArtifactURL: artifactURL,
-            now: Date()
+            now: Date(),
+            maxFiles: .max
         )
         #expect(r1.consumed == 1, "first reduce: file consumed")
 
@@ -300,7 +300,8 @@ struct NovelTokenEffectivenessTests {
         let r2 = try PoolReducer.reduce(
             poolDirectory: poolDir,
             tableArtifactURL: artifactURL,
-            now: Date()
+            now: Date(),
+            maxFiles: .max
         )
         #expect(r2.isNoop, "second reduce on drained pool must be no-op")
 
@@ -340,7 +341,8 @@ struct NovelTokenEffectivenessTests {
         _ = try PoolReducer.reduce(
             poolDirectory: poolDir,
             tableArtifactURL: artifactURL,
-            now: Date()
+            now: Date(),
+            maxFiles: .max
         )
 
         // Simulate NEXT PROCESS LOAD: load the merged table fresh from the

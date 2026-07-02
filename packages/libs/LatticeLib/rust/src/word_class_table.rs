@@ -24,12 +24,12 @@
 // NOVEL-TOKEN RECORDING
 // After classifying a novel token via `hmm_tag`, the result is recorded into
 // SHARED_NOVEL_CACHE — mirroring `tagNovelToken` in WordClassTagger.swift which
-// calls `sharedNovelCache.record(token: lowered, wordClass: tagged)` for both
-// the Apple and non-Apple paths. The cache is initialized by `fdc_runtime.rs`
-// when the bundled artifacts are loaded (stamped with the table version). If the
-// cache has not been initialized yet (SHARED_NOVEL_CACHE not set), the record
-// call is silently skipped — this matches the Swift behavior when
-// `WordClassTableCache.table` is nil (tableVersion defaults to "").
+// calls `sharedNovelCache.record(token: lowered, wordClass: tagged)` after tagging.
+// The cache is initialized by `fdc_runtime.rs` when the bundled artifacts are
+// loaded (stamped with the table version). If the cache has not been initialized
+// yet (SHARED_NOVEL_CACHE not set), the record call is silently skipped; the pool
+// submission's `tableVersion` defaults to `""` at cache construction time if the
+// table is unavailable.
 //
 // WRITABLE-ARTIFACT LOAD PRECEDENCE (cookbook §1.3/§2.2)
 // The PoolReducer merges novel-token observations into a writable copy of the
@@ -143,11 +143,10 @@ impl WordClassTableCache {
     ///
     /// Novel tokens (not in either set) are classified via the deterministic
     /// HMM/Viterbi tagger (`word_class::hmm_tag`) — the byte-identical port of
-    /// Swift's `HMMTagger.tag`. This is the non-Apple novel-token path: Rust runs
-    /// only on non-Apple platforms (Linux/Windows), so the HMM is always the
-    /// correct fallback. The HMM result (noun/verb/other) is recorded into
-    /// `SHARED_NOVEL_CACHE` (mirroring `tagNovelToken` in WordClassTagger.swift
-    /// which records for both Apple-NLTagger and non-Apple-HMM paths).
+    /// Swift's `HMMTagger.tag`. HMM is the cross-port baseline; in Swift, HMM
+    /// is also the default novel-token path on all platforms (Apple `NLTagger`
+    /// is explicit opt-in). The HMM result (noun/verb/other) is recorded into
+    /// `SHARED_NOVEL_CACHE` (mirroring `tagNovelToken` in WordClassTagger.swift).
     ///
     /// The FDC conformance fixture (`fdc_conformance.json`) contains only
     /// table-resident tokens and is unaffected by this path. The HMM
@@ -174,6 +173,37 @@ impl WordClassTableCache {
             cache.record(&lowered, tagged);
         }
         tagged
+    }
+
+    /// Classify a token without recording the novel-token result into the pool
+    /// cache (secfix/fdc-pool).
+    ///
+    /// Identical fast-path to `word_class`: verb-before-noun table lookup,
+    /// constant time. For novel tokens (table misses), classifies via the
+    /// deterministic HMM tagger (`hmm_tag`) but does NOT call
+    /// `SHARED_NOVEL_CACHE.record` — so user-memory content tokens do not
+    /// accumulate in the plaintext pool pipeline.
+    ///
+    ///
+    /// Used by the FDC anchor-encode path: `build_encoder_bag_no_record` →
+    /// `FdcMatcher::encode_anchor_no_record` → `Fdc::encode_anchor_no_record`
+    /// → `capture_with_mode` in `intake.rs`.
+    pub fn word_class_no_record(&self, token: &str) -> WordClass {
+        let lowered = token.to_lowercase();
+        if lowered.is_empty() {
+            return WordClass::Other;
+        }
+        // Fast path: table lookup (verb first, matching Swift ordering).
+        if self.verb_set.contains(&lowered) {
+            return WordClass::Verb;
+        }
+        if self.noun_set.contains(&lowered) {
+            return WordClass::Noun;
+        }
+        // Novel token: HMM classify, no pool accumulation.
+        // The tag result is byte-identical to word_class; only the
+        // SHARED_NOVEL_CACHE.record side effect is omitted.
+        hmm_tag(&lowered)
     }
 
     /// Classify a token using an explicit novel-token tagger choice (Layer-2a).
@@ -290,4 +320,13 @@ pub fn swap_global_table_from_precedence(artifact_path: &Path) -> Option<u64> {
 /// it reads through the live holder so a post-reduce swap is observed in-session.
 pub fn word_class(token: &str) -> WordClass {
     global_table().word_class(token)
+}
+
+/// Classify a single token without recording novel-token results into the pool
+/// cache (secfix/fdc-pool). Reads the LIVE process-global table (same as
+/// `word_class`) but omits the `SHARED_NOVEL_CACHE.record` call for novel tokens.
+///
+/// FDC anchor-encode path inside `build_encoder_bag_no_record`.
+pub fn word_class_no_record(token: &str) -> WordClass {
+    global_table().word_class_no_record(token)
 }

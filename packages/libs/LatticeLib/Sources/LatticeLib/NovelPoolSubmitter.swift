@@ -1,7 +1,7 @@
 // NovelPoolSubmitter.swift
 //
-// into a local directory so the (future) pool-reducer process can consume it
-// (cookbook §2.2, §2.3).
+// into a local directory for the pool-reducer (`PoolReducer.reduce`) to
+// consume (cookbook §2.2, §2.3).
 //
 // DESIGN: The cookbook states the pool endpoint is a config value and
 // consumes these files (`PoolReducer.reduce`) is driven on a low cadence by

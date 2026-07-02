@@ -4,7 +4,8 @@
 //
 // LatticeLib is the lattice/classification library: the FDC
 // (Frame-Directed Classification) engine and the shared text
-// (EideticLib, NeuronKit) import it. It imports no substrate kit.
+// primitives. It is a library, not a kit. It imports no substrate kit.
+// AriaMcpKit, apps/moot-mgr, and tools/seed-generator, among others.
 
 import PackageDescription
 
