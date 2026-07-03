@@ -2,17 +2,19 @@
 #
 # Trigger: tag `vX.Y.Z` pushed by mootx01-ee's sdk-publish workflow (or by
 # scripts/lib_publish/publish-libraries.py run locally with --push).
-# SwiftPM consumers resolve directly from the tag.
+# Verifies provenance and the locked Rust workspace, then creates the
+# Release. SwiftPM consumers resolve directly from the tag.
 #
-# Two-job trust boundary (hardening, 2026-07-02 security review):
-# - `verify` runs with contents:read and persist-credentials:false, so the
-#   Cargo build step (which can execute build scripts from the tagged tree)
-#   never sees a write-capable credential.
-# - `verify` also requires the tagged commit to be reachable from main. The
-#   publisher pushes branch + tag together, so a legitimate tag always is;
-#   a tag pushed on an unreviewed commit fails here before anything builds.
-# - `release` has contents:write but executes no code from the checkout —
-#   it only reads SOURCE.md for the notes and calls `gh release create`.
+# Security posture (SECURITY 8801aafe): `cargo check` runs arbitrary
+# build-script / proc-macro code from the workspace and its locked
+# dependencies. That code must NEVER run in a job that holds a
+# contents:write token or a persisted checkout credential — a compromised
+# build-time dependency could otherwise tamper with the repo or release.
+# So the pipeline is split: a read-only `verify` job (contents:read,
+# persist-credentials:false) runs the build checks, and only the minimal
+# `release` job — which runs NO build code — is granted contents:write,
+# and even it disables checkout credential persistence (gh authenticates
+# via GH_TOKEN, not the git credential).
 
 name: release
 
@@ -21,20 +23,25 @@ on:
     tags:
       - "v*"
 
+# Default the whole workflow to read-only; the release job opts up narrowly.
 permissions:
   contents: read
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
+          # No write-scoped git credential is left in the local git config
+          # while attacker-reachable Cargo build code runs below.
           persist-credentials: false
+          # Full history so origin/main exists for the ancestry gate below.
           fetch-depth: 0
 
+      # The publisher pushes branch + tag in one command, so a legitimate
+      # release tag always points at a commit reachable from main. A v* tag
+      # pushed on an unreviewed side commit fails here before anything builds.
       - name: Check tag commit is on main
         run: git merge-base --is-ancestor HEAD origin/main
 
@@ -52,13 +59,17 @@ jobs:
           cargo check --workspace --locked
 
   release:
-    needs: verify
     runs-on: ubuntu-latest
+    needs: verify
+    # contents:write is scoped to THIS job only — after verify passes, and
+    # in a job that runs no build-script / proc-macro code.
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
+          # gh authenticates via GH_TOKEN below, not the persisted git
+          # credential, so there is no reason to leave one on disk.
           persist-credentials: false
 
       - name: Create GitHub Release
