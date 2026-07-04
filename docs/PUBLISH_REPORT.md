@@ -2,7 +2,7 @@
 # Publish Report
 
 Venue: `moot-semantics`
-Source commit: `aa4eee3f5c75357f2db7769f1a1a50dcfa808ea1`
+Source commit: `cc4e5ad00098d950deba594d75d77eec299dd797`
 
 ## Loaded Packages
 
@@ -67,6 +67,6 @@ Rewritten cross-venue Cargo dependencies:
 Mechanical publish: source export, comment scrubbing, provenance generation,
 cross-venue Cargo dependency rewriting, root SwiftPM manifest generation, root
 Cargo workspace generation, changelog entry, commit, lockstep `v` tag, and
-push. Cross-venue dependencies reference `main`; version-pinned cross-venue
-dependencies, precompiled binary artifacts, generated API reference docs, and
-full conformance-test certification are later publisher phases.
+push. Cross-venue dependencies are pinned to the lockstep `v` tag;
+precompiled binary artifacts, generated API reference docs, and full
+conformance-test certification are later publisher phases.
