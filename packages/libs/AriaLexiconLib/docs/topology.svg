@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+doc: topology
+package: AriaLexiconLib
+repo: moot-semantics
+authored_commit: 021ea704162f86fccea2f030ea9419dacc30a345
+authored_date: 2026-07-04
+sources:
+  - path: Sources/AriaLexiconLib/AriaLexiconLib.swift
+    blob: 6a7f1d2b66f7fb9b2635befacdd44f3c3212217b
+  - path: Sources/AriaLexiconLib/Noun.swift
+    blob: 539bf0460df8d6f60d5e63c11a7706c4c8557eb3
+  - path: Sources/AriaLexiconLib/Verb.swift
+    blob: 7ecf10b17758b23b7652c47879c2b353d28f5965
+  - path: Sources/AriaLexiconLib/Adjective.swift
+    blob: 4c74c273c5fbf1c863f478de3287133119780936
+  - path: Sources/AriaLexiconLib/Acceptance.swift
+    blob: 095b16e63587937c22911a7bada283afdf5aea1a
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="460" viewBox="0 0 860 460" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+  </defs>
+
+  <style>
+    .box   { fill: #ffffff; stroke: #333; stroke-width: 1.5; }
+    .label { font-size: 13px; fill: #111; }
+    .sub   { font-size: 10.5px; fill: #555; }
+    .flow  { stroke: #333; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+    .loop  { stroke: #888; stroke-width: 1.3; fill: none; marker-end: url(#arrow); stroke-dasharray: 5 3; }
+    .region { fill: none; stroke: #999; stroke-width: 1.2; stroke-dasharray: 7 4; }
+    .regionlabel { font-size: 11px; fill: #777; font-style: italic; }
+  </style>
+
+  <!-- Title -->
+  <text x="20" y="28" font-size="15" font-weight="bold" fill="#111">AriaLexiconLib: the ARIA grammar as data</text>
+
+  <!-- Grammar statement -->
+  <rect class="box" x="330" y="55" width="200" height="46" rx="6"/>
+  <text class="label" x="430" y="74" text-anchor="middle">AriaLexiconLib.grammar</text>
+  <text class="sub" x="430" y="89" text-anchor="middle">"verb applied to noun, ± adjectives"</text>
+
+  <!-- Vocabulary row -->
+  <rect class="box" x="60" y="150" width="140" height="52" rx="6"/>
+  <text class="label" x="130" y="172" text-anchor="middle">Noun</text>
+  <text class="sub" x="130" y="188" text-anchor="middle">8 shapes; drawer primary</text>
+
+  <rect class="box" x="300" y="150" width="140" height="52" rx="6"/>
+  <text class="label" x="370" y="172" text-anchor="middle">Verb</text>
+  <text class="sub" x="370" y="188" text-anchor="middle">9 actions; 3 flows</text>
+
+  <rect class="box" x="540" y="150" width="150" height="52" rx="6"/>
+  <text class="label" x="615" y="172" text-anchor="middle">Adjective</text>
+  <text class="sub" x="615" y="188" text-anchor="middle">4 categories, cross-noun</text>
+
+  <!-- Acceptance matrix -->
+  <rect class="box" x="170" y="250" width="200" height="52" rx="6"/>
+  <text class="label" x="270" y="272" text-anchor="middle">Acceptance</text>
+  <text class="sub" x="270" y="288" text-anchor="middle">verb-noun matrix (hand-authored)</text>
+
+  <!-- Arrows: grammar frames the three vocab pieces (loose, dashed context) -->
+  <line class="loop" x1="380" y1="101" x2="150" y2="148"/>
+  <line class="loop" x1="420" y1="101" x2="380" y2="148"/>
+  <line class="loop" x1="470" y1="101" x2="610" y2="148"/>
+
+  <!-- Arrows: Noun and Verb feed Acceptance -->
+  <line class="flow" x1="140" y1="202" x2="230" y2="248"/>
+  <line class="flow" x1="360" y1="202" x2="300" y2="248"/>
+
+  <!-- Rust port region -->
+  <rect class="region" x="30" y="340" width="360" height="100"/>
+  <text class="regionlabel" x="40" y="358">Rust port (conformance-gated mirror)</text>
+
+  <rect class="box" x="60" y="372" width="290" height="52" rx="6"/>
+  <text class="label" x="205" y="394" text-anchor="middle">rust/src/lib.rs</text>
+  <text class="sub" x="205" y="410" text-anchor="middle">aria-lexicon-lib crate + #[cfg(test)] parity gate</text>
+
+  <line class="loop" x1="130" y1="202" x2="130" y2="370"/>
+  <line class="loop" x1="370" y1="202" x2="270" y2="370"/>
+  <line class="loop" x1="270" y1="302" x2="240" y2="370"/>
+
+  <!-- Downstream conformers region -->
+  <rect class="region" x="450" y="340" width="380" height="100"/>
+  <text class="regionlabel" x="460" y="358">Downstream conformers (outside this package)</text>
+
+  <rect class="box" x="475" y="372" width="150" height="52" rx="6"/>
+  <text class="label" x="550" y="391" text-anchor="middle">LocusKit</text>
+  <text class="sub" x="550" y="407" text-anchor="middle">doc-comment citations only</text>
+
+  <rect class="box" x="645" y="372" width="165" height="52" rx="6"/>
+  <text class="label" x="727" y="391" text-anchor="middle">VectorKit / CorpusKit</text>
+  <text class="sub" x="727" y="407" text-anchor="middle">named future conformers</text>
+
+  <line class="loop" x1="270" y1="302" x2="540" y2="370"/>
+</svg>
