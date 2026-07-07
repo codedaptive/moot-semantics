@@ -2,7 +2,7 @@
 # Publish Report
 
 Venue: `moot-semantics`
-Source commit: `2b2e66e0de0bb58438202a6b54ee84495c759d63`
+Source commit: `5d94bcc7cf411088843b9107c755c2c56f678113`
 
 ## Loaded Packages
 
@@ -40,6 +40,7 @@ Removed internal/process comment lines:
 - `packages/libs/LatticeLib/Tests/LatticeLibTests/NovelTokenTaggerChoiceTests.swift`: 1 line(s)
 - `packages/libs/LatticeLib/Tests/LatticeLibTests/PoolReducerTests.swift`: 9 line(s)
 - `packages/libs/LatticeLib/Tests/LatticeLibTests/QIDClosureTests.swift`: 1 line(s)
+- `packages/libs/LatticeLib/Tests/LatticeLibTests/WordClassSeedTests.swift`: 6 line(s)
 - `packages/libs/LatticeLib/rust/src/code.rs`: 2 line(s)
 - `packages/libs/LatticeLib/rust/src/concept_bag.rs`: 3 line(s)
 - `packages/libs/LatticeLib/rust/src/fdc_matcher.rs`: 16 line(s)
