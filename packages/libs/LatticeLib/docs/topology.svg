@@ -3,8 +3,8 @@
 doc: topology
 package: LatticeLib
 repo: moot-semantics
-authored_commit: bbfef540c1b675b3fb9a493e596499b0fdf2e826
-authored_date: 2026-07-04
+authored_commit: ee425fbef9955ae233794d035902d12db4348044
+authored_date: 2026-07-07
 sources:
   - path: Sources/LatticeLib/FDCRuntime.swift
     blob: 2fd34b7657f6888117fb9d4226ef314769d75800
@@ -19,7 +19,7 @@ sources:
   - path: Sources/LatticeLib/NovelTokenCache.swift
     blob: 70342e766178eb15c14f52b28cb51d9aa11c6890
   - path: Sources/LatticeLib/NovelPoolSubmitter.swift
-    blob: be91dd71f60a81681c8102567ceeff14ad974526
+    blob: e939e0b8858a2b6bec2cc6daf6196268ecf0d9e8
   - path: Sources/LatticeLib/PoolReducer.swift
     blob: e0ccb6a314ec39c47d31dab798841af93c4d394a
 -->
@@ -43,6 +43,7 @@ sources:
 
   <!-- Title -->
   <text x="20" y="28" font-size="15" font-weight="bold" fill="#111">LatticeLib: text in, lattice code out</text>
+  <text class="sub" x="20" y="46">v1.0.24: pool cap, self-cycle guard, and explicit LexRank sentinels.</text>
 
   <!-- Main pipeline row -->
   <rect class="box" x="20" y="80" width="110" height="52" rx="6"/>

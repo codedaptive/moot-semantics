@@ -2,8 +2,8 @@
 doc: AGENT_MAP
 package: LatticeLib
 repo: moot-semantics
-authored_commit: bbfef540c1b675b3fb9a493e596499b0fdf2e826
-authored_date: 2026-07-04
+authored_commit: ee425fbef9955ae233794d035902d12db4348044
+authored_date: 2026-07-07
 sources:
   - path: Sources/LatticeLib/Code.swift
     blob: e2c8307da3a2821bbabd7055a8f714754289df0f
@@ -24,13 +24,13 @@ sources:
   - path: Sources/LatticeLib/Lexicon.swift
     blob: 2a51dfbf417b542b60f5b5597e0850957c5b6631
   - path: Sources/LatticeLib/LexRank.swift
-    blob: 6e3cdb0c19c7a7b68992a6bd79780d15f5aa711e
+    blob: 5c6fb919539aa3b59e71ff8d351cbfa71a2d7a9e
   - path: Sources/LatticeLib/NFKCSubset.swift
     blob: fd2753d05e13b1bc430d2688cc78d0395dca58a6
   - path: Sources/LatticeLib/Normalizer.swift
     blob: f989b93b3dc55751f21bcca65e8e2892bb4193e7
   - path: Sources/LatticeLib/NovelPoolSubmitter.swift
-    blob: be91dd71f60a81681c8102567ceeff14ad974526
+    blob: e939e0b8858a2b6bec2cc6daf6196268ecf0d9e8
   - path: Sources/LatticeLib/NovelTokenCache.swift
     blob: 70342e766178eb15c14f52b28cb51d9aa11c6890
   - path: Sources/LatticeLib/NovelTokenTaggerChoice.swift
@@ -38,7 +38,7 @@ sources:
   - path: Sources/LatticeLib/PoolReducer.swift
     blob: e0ccb6a314ec39c47d31dab798841af93c4d394a
   - path: Sources/LatticeLib/QIDClosure.swift
-    blob: 11ef3156c12ce27d6b1c1401e3b47a94c3f1bf63
+    blob: bffb053a66467662b967b0d2d8619e047e260ecf
   - path: Sources/LatticeLib/Stemmer.swift
     blob: 042fe54236cbe61f1cb4126dc27dde97a3f5cc5d
   - path: Sources/LatticeLib/Tokenizer.swift
@@ -56,6 +56,10 @@ sources:
 PURPOSE: deterministic on-device text→classification-code engine (FDC: Frame-Directed Classification) + shared text primitives. Text → concept bag → scored match against pinned code signatures → decimal-frame descent → code (or nil=UNRESOLVED).
 
 DEPS: imports SubstrateML (EigenvalueCentrality, build-time LexRank only), NaturalLanguage (LexRank sentence-split; optional NLTagger path), OSLog. Imported by: EideticLib, AriaMcpKit, apps/moot-mgr, tools/seed-generator. Rust port in rust/ mirrors everything; conformance fixtures rust/tests/fixtures/*.json gate byte-identity.
+
+
+CURRENT TRUE-UP:
+- v1.0.24: LexRank passes explicit offline telemetry sentinels. NovelPoolSubmitter caps pool files at 500. QIDClosure skips self-cycles.
 
 ENTRY POINTS (most callers need only these):
 - FDCRuntime.swift:32 `FDC.encodeAnchor(_ text:) -> (code: String?, conceptQID: String?)`: main runtime classify
