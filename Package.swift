@@ -14,7 +14,7 @@ let package = Package(
         .library(name: "LatticeLib", targets: ["LatticeLib"])
     ],
     dependencies: [
-        .package(url: "https://github.com/codedaptive/moot-core.git", exact: "1.0.26")
+        .package(url: "https://github.com/codedaptive/moot-core.git", exact: "1.0.28")
     ],
     targets: [
         .target(
@@ -40,7 +40,7 @@ let package = Package(
         ),
         .target(
             name: "LatticeLib",
-            dependencies: [.product(name: "SubstrateML", package: "moot-core")],
+            dependencies: [.product(name: "SubstrateML", package: "moot-core"), .product(name: "SubstrateKernel", package: "moot-core")],
             path: "packages/libs/LatticeLib/Sources/LatticeLib",
             resources: [.process("Resources")]
         ),

@@ -2,7 +2,7 @@
 # Publish Report
 
 Venue: `moot-semantics`
-Source commit: `901cb77c45dc4134b85839cb058a9155a41bf6c4`
+Source commit: `16578bb9b6f1f2b63e49d6d5141a50596ee5655d`
 
 ## Loaded Packages
 
@@ -29,7 +29,7 @@ Removed internal/process comment lines:
 - `packages/libs/LatticeLib/Sources/LatticeLib/FDCRuntime.swift`: 4 line(s)
 - `packages/libs/LatticeLib/Sources/LatticeLib/HMMTagger.swift`: 4 line(s)
 - `packages/libs/LatticeLib/Sources/LatticeLib/NovelPoolSubmitter.swift`: 4 line(s)
-- `packages/libs/LatticeLib/Sources/LatticeLib/NovelTokenCache.swift`: 3 line(s)
+- `packages/libs/LatticeLib/Sources/LatticeLib/NovelTokenCache.swift`: 4 line(s)
 - `packages/libs/LatticeLib/Sources/LatticeLib/NovelTokenTaggerChoice.swift`: 1 line(s)
 - `packages/libs/LatticeLib/Sources/LatticeLib/PoolReducer.swift`: 8 line(s)
 - `packages/libs/LatticeLib/Sources/LatticeLib/WordClassTable.swift`: 1 line(s)
@@ -43,8 +43,8 @@ Removed internal/process comment lines:
 - `packages/libs/LatticeLib/Tests/LatticeLibTests/WordClassSeedTests.swift`: 6 line(s)
 - `packages/libs/LatticeLib/rust/src/code.rs`: 2 line(s)
 - `packages/libs/LatticeLib/rust/src/concept_bag.rs`: 3 line(s)
-- `packages/libs/LatticeLib/rust/src/fdc_matcher.rs`: 16 line(s)
-- `packages/libs/LatticeLib/rust/src/fdc_runtime.rs`: 8 line(s)
+- `packages/libs/LatticeLib/rust/src/fdc_matcher.rs`: 19 line(s)
+- `packages/libs/LatticeLib/rust/src/fdc_runtime.rs`: 9 line(s)
 - `packages/libs/LatticeLib/rust/src/lib.rs`: 1 line(s)
 - `packages/libs/LatticeLib/rust/src/novel_pool_submitter.rs`: 10 line(s)
 - `packages/libs/LatticeLib/rust/src/novel_token_cache.rs`: 8 line(s)
@@ -61,7 +61,7 @@ Removed internal/process comment lines:
 
 Rewritten cross-venue Cargo dependencies:
 
-- None
+- packages/libs/LatticeLib/rust/Cargo.toml: `substrate-kernel` -> `codedaptive/moot-core`
 
 ## Notes
 
