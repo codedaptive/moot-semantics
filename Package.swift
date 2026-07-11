@@ -14,7 +14,7 @@ let package = Package(
         .library(name: "LatticeLib", targets: ["LatticeLib"])
     ],
     dependencies: [
-        .package(url: "https://github.com/codedaptive/moot-core.git", exact: "1.0.28")
+        .package(url: "https://github.com/codedaptive/moot-core.git", exact: "1.0.29")
     ],
     targets: [
         .target(
