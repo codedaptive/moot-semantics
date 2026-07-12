@@ -2,7 +2,7 @@
 # Publish Report
 
 Venue: `moot-semantics`
-Source commit: `81636c9a67375dd4bd073f006aefa5c3fd6582d2`
+Source commit: `8c8d6bcdb68225519abe0c8a83e1fbf199d4f4d5`
 
 ## Loaded Packages
 
