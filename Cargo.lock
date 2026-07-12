@@ -22,7 +22,7 @@ dependencies = [
 [[package]]
 name = "intellectus-lib"
 version = "0.1.0"
-source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.30#6b656530ee4b62345f6ed4f25fcf190c862febe3"
+source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.31-rc.1#a42aab555d597c5646ddc1173509c0be9f790084"
 
 [[package]]
 name = "itoa"
@@ -110,7 +110,7 @@ dependencies = [
 [[package]]
 name = "substrate-kernel"
 version = "1.0.0-skeleton"
-source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.30#6b656530ee4b62345f6ed4f25fcf190c862febe3"
+source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.31-rc.1#a42aab555d597c5646ddc1173509c0be9f790084"
 dependencies = [
  "intellectus-lib",
  "substrate-types",
@@ -119,7 +119,7 @@ dependencies = [
 [[package]]
 name = "substrate-types"
 version = "1.0.0-skeleton"
-source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.30#6b656530ee4b62345f6ed4f25fcf190c862febe3"
+source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.31-rc.1#a42aab555d597c5646ddc1173509c0be9f790084"
 
 [[package]]
 name = "syn"
