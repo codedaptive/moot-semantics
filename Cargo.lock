@@ -22,7 +22,7 @@ dependencies = [
 [[package]]
 name = "intellectus-lib"
 version = "0.1.0"
-source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.31-rc.1#a42aab555d597c5646ddc1173509c0be9f790084"
+source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.31#e36b0aed4aa007e057d2f2f57a0cc871a43f7a4d"
 
 [[package]]
 name = "itoa"
@@ -110,7 +110,7 @@ dependencies = [
 [[package]]
 name = "substrate-kernel"
 version = "1.0.0-skeleton"
-source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.31-rc.1#a42aab555d597c5646ddc1173509c0be9f790084"
+source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.31#e36b0aed4aa007e057d2f2f57a0cc871a43f7a4d"
 dependencies = [
  "intellectus-lib",
  "substrate-types",
@@ -119,7 +119,7 @@ dependencies = [
 [[package]]
 name = "substrate-types"
 version = "1.0.0-skeleton"
-source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.31-rc.1#a42aab555d597c5646ddc1173509c0be9f790084"
+source = "git+https://github.com/codedaptive/moot-core?tag=v1.0.31#e36b0aed4aa007e057d2f2f57a0cc871a43f7a4d"
 
 [[package]]
 name = "syn"
@@ -146,6 +146,6 @@ checksum = "c6f5d3c3b1bf09027a88a6bc961fc00497d651009560b5463668dc81b0fa87a8"
 
 [[package]]
 name = "zmij"
-version = "1.0.21"
+version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
+checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
