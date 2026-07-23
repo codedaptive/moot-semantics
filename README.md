@@ -5,44 +5,102 @@ MOOT Semantics provides the vocabulary and classification libraries used by MOOT
 
 Current version: `v1.0.32` · generated from canonical source commit `6fe29be84`.
 
-## What This Repository Is
+> **Choose this repository when:** You need the ARIA vocabulary or deterministic local classification from text or code to stable FDC and Wikidata anchors.
 
-This repository is an Apache-2.0 published library venue for the MOOTx01
-Framework, generated from the canonical MOOTx01 product tree by the library
-publisher. Every release records its source commit in `SOURCE.md` and its
-load manifest in `docs/PUBLISH_REPORT.md`.
+[Documentation index](docs/README.md) · [package map](docs/PACKAGE_MAP.md) ·
+[dependency graph](docs/DEPENDENCY_GRAPH.md) · [security policy](SECURITY.md)
+
+## Open-source SDK family
+
+The MOOTx01 engines are published as four standalone Apache-2.0 repositories.
+You can install one repository or compose the family.
+
+| Repository | Use it for |
+|---|---|
+| [`moot-memory`](https://github.com/codedaptive/moot-memory) | Structured memory, vector search, and local RAG |
+| [`moot-semantics`](https://github.com/codedaptive/moot-semantics) | ARIA vocabulary and deterministic local classification |
+| [`moot-system`](https://github.com/codedaptive/moot-system) | Storage, datasets, queues, sync, telemetry, and loopback HTTP |
+| [`moot-core`](https://github.com/codedaptive/moot-core) | Shared types, kernel, fingerprints, lifecycle rules, and memory math |
+
+Dependency order is `moot-core`, then `moot-semantics` and `moot-system`,
+then `moot-memory`. The release tags move in lockstep.
 
 ## Packages
 
-- `packages/libs/AriaLexiconLib`
-- `packages/libs/LatticeLib`
-- `packages/libs/EideticLib`
+| Package | Responsibility | Swift product | Rust crate |
+|---|---|---|---|
+| [`AriaLexiconLib`](packages/libs/AriaLexiconLib/docs/OVERVIEW.md) | Reified ARIA nouns, verbs, adjectives, and flow rules | `AriaLexiconLib` | `aria-lexicon-lib` |
+| [`LatticeLib`](packages/libs/LatticeLib/docs/OVERVIEW.md) | Deterministic local FDC classification and semantic evidence | `LatticeLib` | `lattice-lib` |
+| [`EideticLib`](packages/libs/EideticLib/docs/OVERVIEW.md) | Small text-or-code to stable anchor facade | `EideticLib` | `eidetic-lib` |
 
-Per-package detail lives in `docs/PACKAGE_MAP.md`.
+Start with EideticLib for one-call anchoring. Use LatticeLib when you need classifier evidence, labels, or lower-level control.
 
-## Installation
+## Add it to a project
 
-SwiftPM:
+The Swift package requires Swift 6.2 and declares macOS 26 and iOS 26.
+Add the repository, then select only the products your target uses.
 
 ```swift
-.package(url: "https://github.com/codedaptive/moot-semantics.git", from: "1.0.32")
+dependencies: [
+    .package(
+        url: "https://github.com/codedaptive/moot-semantics.git",
+        from: "1.0.32"
+    ),
+],
+targets: [
+    .target(
+        name: "YourTarget",
+        dependencies: [
+            .product(
+                name: "EideticLib",
+                package: "moot-semantics"
+            ),
+        ]
+    ),
+]
 ```
 
-Cargo (git dependency; see `docs/PACKAGE_MAP.md` for crate names):
+The Rust workspace uses edition 2021. Select a concrete crate by package name.
 
 ```toml
 [dependencies]
-<crate-name> = { git = "https://github.com/codedaptive/moot-semantics", tag = "v1.0.32" }
+eidetic-lib = { git = "https://github.com/codedaptive/moot-semantics", tag = "v1.0.32" }
 ```
 
-## Provenance
+Verify a checkout with both language gates:
+
+```bash
+swift test
+cargo test --workspace --locked
+```
+
+## Documentation
+
+[`docs/README.md`](docs/README.md) is the documentation front door.
+Each package has three maintained views:
+
+- **AriaLexiconLib:** [overview](packages/libs/AriaLexiconLib/docs/OVERVIEW.md), [implementation detail](packages/libs/AriaLexiconLib/docs/DETAILS.md), [AI and maintainer map](packages/libs/AriaLexiconLib/docs/AGENT_MAP.md)
+- **LatticeLib:** [overview](packages/libs/LatticeLib/docs/OVERVIEW.md), [implementation detail](packages/libs/LatticeLib/docs/DETAILS.md), [AI and maintainer map](packages/libs/LatticeLib/docs/AGENT_MAP.md)
+- **EideticLib:** [overview](packages/libs/EideticLib/docs/OVERVIEW.md), [implementation detail](packages/libs/EideticLib/docs/DETAILS.md), [AI and maintainer map](packages/libs/EideticLib/docs/AGENT_MAP.md)
+
+Use [`docs/CONFORMANCE.md`](docs/CONFORMANCE.md) for cross-language gates.
+Use [`docs/DATA_PROVENANCE.md`](docs/DATA_PROVENANCE.md) for artifact origin.
+Use [`SOURCE.md`](SOURCE.md) and [`docs/PUBLISH_REPORT.md`](docs/PUBLISH_REPORT.md)
+to trace this release back to the canonical source.
+
+## What This Repository Is
+
+This repository is a generated public venue for MOOTx01 Framework libraries.
+The code here is Apache-2.0 and is intended for direct use outside the MOOTx01
+product. The publisher records the exact source and load report for every tag.
 
 - Canonical source: `mootx01-ee`
 - Source commit: `6fe29be84ff7ccdae2aaa0dcffb78ecada6076cb`
 - Version: `1.0.32`
 - Generated by: `scripts/lib_publish/publish-libraries.py`
 
-## Brand
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) before proposing changes and
+[`SECURITY.md`](SECURITY.md) for private vulnerability reporting.
 
 MOOTx01 is a registered trademark. Use `MOOTx01 Approved` only for artifacts
 that pass the published conformance and release gates. Independent work that has

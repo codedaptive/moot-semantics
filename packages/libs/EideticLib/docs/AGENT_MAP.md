@@ -2,11 +2,11 @@
 doc: AGENT_MAP
 package: EideticLib
 repo: moot-semantics
-authored_commit: 021ea704162f86fccea2f030ea9419dacc30a345
-authored_date: 2026-07-04
+authored_commit: 4b160824be9616aafb464187f74e884b1ff6d61d
+authored_date: 2026-07-23
 sources:
   - path: Sources/EideticLib/EideticLib.swift
-    blob: 1839588dc98279c1eee2786f1974457a5608742b
+    blob: 545be504130a9becae7cbe6e7d58a243ccb07a64
   - path: Sources/EideticLib/LatticeCodeState.swift
     blob: 7580261208b77c7e79363a510920c413054264a1
   - path: Sources/EideticLib/Segmenter.swift
@@ -15,7 +15,7 @@ sources:
 
 # AGENT_MAP: EideticLib
 
-PURPOSE: thin deterministic facade over LatticeLib's FDC engine (term → Anchor{code, wikidataQID, confidence, dataVersion}) plus two unrelated small utilities: lattice-code shape/known-state classification, and sentence segmentation. Carries no reference data of its own.
+PURPOSE: thin deterministic facade over LatticeLib's FDC engine (term → Anchor{code, wikidataQID, confidence, dataVersion}) plus content-aware text/code anchoring and two unrelated small utilities: lattice-code shape/known-state classification, and sentence segmentation. Carries no reference data of its own.
 
 DEPS: imports LatticeLib (FDC.encodeAnchor/isAvailable/dataVersion), NaturalLanguage (Apple-only NLTokenizer sentence path), Foundation. Imported by: CorpusKit (moot-memory kit, `EideticLib.sentences` only) and, per Package.swift header comment, NeuronKit (not present in these four venue repos: likely mootx01-ee/ce, out of scope here). Rust port in rust/ (crate `eidetic-lib`) mirrors lookup, classifyLatticeCode, and the delimiter segmenter exactly; depends on sibling `lattice-lib` crate. No Rust counterpart to the NLTokenizer path (Apple-only, excluded from cross-leg parity by the apple-nlp-accel constitutional constraint C-2).
 
@@ -26,6 +26,9 @@ ENTRY POINTS (most callers need only these):
 - Segmenter.swift:47 `EideticLib.sentences(_ text: String) -> [Substring]`: platform-routed sentence split
 
 ## Symbol Table
+
+- EideticLib.swift `enum EideticContentKind`: `.text` or `.code`.
+- EideticLib.swift `lookup(_:contentKind:recordNovel:)`: code anchors at FDC `005`; a decisive local language match supplies its pinned Q-ID.
 
 ### Lookup surface: EideticLib.swift
 - :20 `enum EideticLib`: namespace; holds no reference data, delegates entirely to LatticeLib.FDC

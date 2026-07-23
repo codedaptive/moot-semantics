@@ -2,11 +2,11 @@
 doc: DETAILS
 package: EideticLib
 repo: moot-semantics
-authored_commit: 021ea704162f86fccea2f030ea9419dacc30a345
-authored_date: 2026-07-04
+authored_commit: 4b160824be9616aafb464187f74e884b1ff6d61d
+authored_date: 2026-07-23
 sources:
   - path: Sources/EideticLib/EideticLib.swift
-    blob: 1839588dc98279c1eee2786f1974457a5608742b
+    blob: 545be504130a9becae7cbe6e7d58a243ccb07a64
   - path: Sources/EideticLib/LatticeCodeState.swift
     blob: 7580261208b77c7e79363a510920c413054264a1
   - path: Sources/EideticLib/Segmenter.swift
@@ -14,6 +14,13 @@ sources:
 ---
 
 # EideticLib Details
+
+## Current Release Details
+
+`EideticContentKind` adds text and code choices.
+The content-aware lookup maps code to FDC `005`.
+It adds a language Q-ID only when local detection has one clear winner.
+The caller still controls novel-token recording.
 
 This document walks through every source file in the package. Read
 `OVERVIEW.md` first for the big picture. The three files stand
@@ -24,8 +31,8 @@ classifier, and the sentence segmenter.
 ## EideticLib.swift
 
 This file provides the module surface. That surface is the
-`EideticLib` enum, its `lookup` functions, `classifyLatticeCode`, and
-the `Anchor` result type.
+`EideticLib` enum, its `lookup` functions, `EideticContentKind`,
+`classifyLatticeCode`, and the `Anchor` result type.
 
 `EideticLib` is a namespace enum, the same pattern LatticeLib uses for
 its own module surface. It holds no reference data. A comment at the
@@ -33,7 +40,7 @@ top of the file states this plainly. LatticeLib's FDC runtime owns and
 caches the pinned lexicon, frame, and signatures. EideticLib parses
 nothing of its own. It simply calls through.
 
-The two `lookup` overloads share one behavior. They never return a
+The lookup forms share one behavior. They never return a
 made-up answer. Suppose `FDC.isAvailable` is false, meaning the FDC
 artifacts bundled inside LatticeLib failed to load. Then both overloads
 call `fatalError` and stop the process. A comment in the code names a
@@ -45,6 +52,11 @@ true statement about the term. A missing artifact bundle is different. It
 is not a fact about any term. It is a broken build. The correct
 response is to stop at once, rather than let every caller silently
 receive a meaningless answer.
+
+The content-aware form accepts `EideticContentKind`. Text uses the
+normal FDC classifier. Nonempty code uses FDC `005`. A clear local
+language match also supplies its pinned Wikidata Q-ID. The path does
+not use a network or a model service.
 
 `version` is the module version string, `"0.1.0"`. Like LatticeLib's
 own version constant, it serves one purpose. A consumer can record

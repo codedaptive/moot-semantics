@@ -2,27 +2,27 @@
 doc: AGENT_MAP
 package: LatticeLib
 repo: moot-semantics
-authored_commit: ee425fbef9955ae233794d035902d12db4348044
-authored_date: 2026-07-07
+authored_commit: 4b160824be9616aafb464187f74e884b1ff6d61d
+authored_date: 2026-07-23
 sources:
   - path: Sources/LatticeLib/Code.swift
     blob: e2c8307da3a2821bbabd7055a8f714754289df0f
   - path: Sources/LatticeLib/CodeSignature.swift
     blob: b9245f8e8a8c913bcdcb27287aab45cd2729abd9
   - path: Sources/LatticeLib/ConceptBag.swift
-    blob: db18742c50e495682521bd7dd544b3725969b467
+    blob: 863c465770169ab1609d3549359083c9c0123602
   - path: Sources/LatticeLib/FDCFrame.swift
-    blob: 8d83ab902206ffdb4d3ee9351a6443c90bcead77
+    blob: 705d3a79b693a1230d2875825a0077f12173ccb3
   - path: Sources/LatticeLib/FDCMatcher.swift
-    blob: 330b99e7af1d6366425d4956652a3dd11b1a1c4b
+    blob: 36c5414775b99460cb435056612d755f29a85915
   - path: Sources/LatticeLib/FDCRuntime.swift
-    blob: 2fd34b7657f6888117fb9d4226ef314769d75800
+    blob: 1f44f0eedadae7a879d9dc2786a28a89ee2ddc32
   - path: Sources/LatticeLib/HMMTagger.swift
     blob: 45ecd95be83f7416851a80070f85aa05aea7fc4a
   - path: Sources/LatticeLib/LatticeLib.swift
     blob: 88712d0a73a75d9400741a871719f39be2edc584
   - path: Sources/LatticeLib/Lexicon.swift
-    blob: 2a51dfbf417b542b60f5b5597e0850957c5b6631
+    blob: ac8b128dc92f1e5def5fe3bb30cb2327f94dc97a
   - path: Sources/LatticeLib/LexRank.swift
     blob: 5c6fb919539aa3b59e71ff8d351cbfa71a2d7a9e
   - path: Sources/LatticeLib/NFKCSubset.swift
@@ -32,7 +32,7 @@ sources:
   - path: Sources/LatticeLib/NovelPoolSubmitter.swift
     blob: e939e0b8858a2b6bec2cc6daf6196268ecf0d9e8
   - path: Sources/LatticeLib/NovelTokenCache.swift
-    blob: 70342e766178eb15c14f52b28cb51d9aa11c6890
+    blob: 3be90d4f5f7804fc6cbe61ca9489fab859bb51ad
   - path: Sources/LatticeLib/NovelTokenTaggerChoice.swift
     blob: 0c9b84a315ca7b31e4bf626f1830c3eea243d8aa
   - path: Sources/LatticeLib/PoolReducer.swift
@@ -49,11 +49,21 @@ sources:
     blob: 731f6f90c59aae71c73114ede301877d1bf8035f
   - path: Sources/LatticeLib/WordClassTagger.swift
     blob: 15e27da5cdeca3540654914992e8c78f83ed937a
+  - path: Sources/LatticeLib/FDCCodeLanguage.swift
+    blob: d00f6956f371ceeefd42ab7c9f756f362e5d8411
+  - path: Sources/LatticeLib/FDCSemanticRanker.swift
+    blob: b74584aae58bfd060e5b3a53257ff62db1138a53
+  - path: Sources/LatticeLib/LexiconKeyPolicy.swift
+    blob: 5f0a937a18ed7ac47b1dfe7823b75da5f4e8fdb2
+  - path: Sources/LatticeLib/Resources/FDCSemanticRanker.bin
+    blob: d3df1cfc5320a176e08835a80e536a8e7162c571
+  - path: Sources/LatticeLib/Resources/FDCSemanticRanker.json
+    blob: 09cbaa9574263c495ec3f51f8ee288804bae09a6
 ---
 
 # AGENT_MAP: LatticeLib
 
-PURPOSE: deterministic on-device text→classification-code engine (FDC: Frame-Directed Classification) + shared text primitives. Text → concept bag → scored match against pinned code signatures → decimal-frame descent → code (or nil=UNRESOLVED).
+PURPOSE: deterministic on-device text/code→classification-code engine (FDC: Frame-Directed Classification) + shared text primitives. Text → concept bag → source-owned signature match + pinned integer semantic evidence → confidence-gated decimal-frame descent → code. Explicit code content anchors at 005 and may carry a pinned language Q-ID.
 
 DEPS: imports SubstrateML (EigenvalueCentrality, build-time LexRank only), NaturalLanguage (LexRank sentence-split; optional NLTagger path), OSLog. Imported by: EideticLib, AriaMcpKit, apps/moot-mgr, tools/seed-generator. Rust port in rust/ mirrors everything; conformance fixtures rust/tests/fixtures/*.json gate byte-identity.
 
@@ -67,6 +77,12 @@ ENTRY POINTS (most callers need only these):
 - WordClassTagger.swift:65 `LatticeLib.wordClass(_ token:) -> WordClass`: single-token noun/verb/other
 
 ## Symbol Table
+
+- FDCCodeLanguage.swift `FDCCodeLanguageDetector.detect(in:)`: local rule-based programming-language detection; ties and weak scores return nil.
+- FDCSemanticRanker.swift `FDCSemanticRanker.rank(_:limit:)`: deterministic integer candidates over a SHA-256-verified sparse model.
+- FDCSemanticRanker.swift `hierarchyDecision(_:frame:)`: conservative main-class or one-child decision; semantic evidence never claims a narrow leaf.
+- FDCRuntime.swift `FDC.semanticCandidates`, `semanticDecision`, `semanticModelVersion`, `recalculationVersion`: public evidence and provenance surfaces for classifier v4.
+- LexiconKeyPolicy.swift: shared normalized-key policy for Swift and Rust lookup parity.
 
 ### Runtime facade: FDCRuntime.swift
 - :15 `enum FDC`: artifact-owning facade; loads lexicon+frame+signatures once/process

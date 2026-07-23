@@ -2,11 +2,11 @@
 doc: OVERVIEW
 package: EideticLib
 repo: moot-semantics
-authored_commit: 021ea704162f86fccea2f030ea9419dacc30a345
-authored_date: 2026-07-04
+authored_commit: 4b160824be9616aafb464187f74e884b1ff6d61d
+authored_date: 2026-07-23
 sources:
   - path: Sources/EideticLib/EideticLib.swift
-    blob: 1839588dc98279c1eee2786f1974457a5608742b
+    blob: 545be504130a9becae7cbe6e7d58a243ccb07a64
   - path: Sources/EideticLib/LatticeCodeState.swift
     blob: 7580261208b77c7e79363a510920c413054264a1
   - path: Sources/EideticLib/Segmenter.swift
@@ -14,6 +14,14 @@ sources:
 ---
 
 # EideticLib Overview
+
+## Current Release Notes
+
+EideticLib now accepts an explicit content kind.
+Text follows the normal FDC path.
+Code anchors at FDC `005`.
+A clear language match also adds its pinned Wikidata Q-ID.
+The lookup stays local and can disable novel-token recording.
 
 ## What This Library Does
 
@@ -29,6 +37,10 @@ language. For example, `Q144` names the concept "dog."
 EideticLib holds no reference data of its own. Every lookup calls
 `FDC.encodeAnchor`. That call is the entry point into LatticeLib's
 Frame-Directed Classification engine, known as FDC.
+
+The `EideticContentKind` value tells the lookup whether input is text
+or source code. Code gets a stable FDC anchor even when its subject is
+unclear. A local rule set can refine that anchor with a language Q-ID.
 
 EideticLib also carries two small utilities. The first checks whether
 a lattice code string is well formed and known. The second splits text
