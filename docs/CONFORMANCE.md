@@ -2,7 +2,7 @@
 # Conformance
 
 This document records the executable conformance surface shipped in
-`moot-semantics` `v1.0.32`, generated from canonical source commit `6fe29be84ff7ccdae2aaa0dcffb78ecada6076cb`.
+`moot-semantics` `v1.0.35`, generated from canonical source commit `4c8673c0330b79bc2163b704cee40bb61985b340`.
 It replaces the venue-bootstrap placeholder; package source is loaded.
 
 ## Release gates
