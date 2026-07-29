@@ -1,7 +1,7 @@
 # MOOT Semantics
 
 Apache-2.0 public SDK repository in the MOOTx01 Framework.
-Current release: v1.0.35
+Current release: v1.0.36
 Repository: https://github.com/codedaptive/moot-semantics
 
 Choose this repository when: You need the ARIA vocabulary or deterministic local classification from text or code to stable FDC and Wikidata anchors.

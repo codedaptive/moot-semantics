@@ -3,10 +3,10 @@
 
 This venue contains package source loaded by the public-library publisher.
 
-- Venue release: `v1.0.35`
+- Venue release: `v1.0.36`
 - Canonical source repository: `mootx01-ee`
-- Canonical source commit: `4c8673c0330b79bc2163b704cee40bb61985b340`
-- Source snapshot date: `2026-07-28T18:12:20-05:00`
+- Canonical source commit: `2c30254551f920bc319855c3278a87a88af97fc4`
+- Source snapshot date: `2026-07-28T23:09:26-05:00`
 - Publisher: `scripts/lib_publish/publish-libraries.py`
 - Venue license: Apache-2.0, subject to any exception recorded in
   [`LICENSES_THIRD_PARTY.md`](LICENSES_THIRD_PARTY.md)
