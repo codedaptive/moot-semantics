@@ -2,7 +2,7 @@
 # Conformance
 
 This document records the executable conformance surface shipped in
-`moot-semantics` `v1.0.36`, generated from canonical source commit `2c30254551f920bc319855c3278a87a88af97fc4`.
+`moot-semantics` `v1.0.37`, generated from canonical source commit `1ea9e910eb626806f4452aef03d063c04b60c82a`.
 It replaces the venue-bootstrap placeholder; package source is loaded.
 
 ## Release gates
@@ -23,7 +23,7 @@ its loaded packages pass; this inventory does not stand in for their output.
 | Package | Swift test sources | Rust test sources | Named conformance/vector evidence |
 |---|---:|---:|---:|
 | `AriaLexiconLib` | 5 | 0 | 0 |
-| `LatticeLib` | 24 | 14 | 10 |
+| `LatticeLib` | 24 | 15 | 10 |
 | `EideticLib` | 11 | 1 | 4 |
 
 ## Named agreement evidence
